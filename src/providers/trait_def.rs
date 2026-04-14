@@ -79,7 +79,8 @@ pub trait WebSearchProvider: Send + Sync {
     ///
     /// # Returns
     /// A `SearchResponse` containing search results and related queries.
-    async fn search(&self, query: &str, max_results: u32) -> Result<SearchResponse, WebSearchError>;
+    async fn search(&self, query: &str, max_results: u32)
+        -> Result<SearchResponse, WebSearchError>;
 
     /// Fetch and extract content from a URL.
     ///

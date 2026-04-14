@@ -48,7 +48,10 @@ pub enum WebSearchError {
 impl WebSearchError {
     /// Check if error is an auth error (invalid API key).
     pub fn is_auth_error(&self) -> bool {
-        matches!(self, WebSearchError::AuthError(_) | WebSearchError::ProviderError(1004, _))
+        matches!(
+            self,
+            WebSearchError::AuthError(_) | WebSearchError::ProviderError(1004, _)
+        )
     }
 
     /// Check if error is a transient error (network, rate limit).

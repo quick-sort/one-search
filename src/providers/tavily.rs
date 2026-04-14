@@ -1,7 +1,9 @@
 //! Tavily web search provider implementation.
 
 use crate::error::WebSearchError;
-use crate::providers::trait_def::{FetchResponse, RelatedSearch, SearchResponse, SearchResult, WebSearchProvider};
+use crate::providers::trait_def::{
+    FetchResponse, RelatedSearch, SearchResponse, SearchResult, WebSearchProvider,
+};
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::Deserialize;
@@ -45,7 +47,7 @@ struct TavilyExtractResponse {
 #[derive(Debug, Deserialize)]
 struct TavilyExtractResult {
     url: String,
-    #[serde(alias = "content")]  // fallback if raw_content not present
+    #[serde(alias = "content")] // fallback if raw_content not present
     raw_content: String,
     #[serde(default)]
     images: Vec<String>,
@@ -91,10 +93,15 @@ impl WebSearchProvider for TavilyProvider {
         "tavily"
     }
 
-    async fn search(&self, query: &str, max_results: u32) -> Result<SearchResponse, WebSearchError> {
+    async fn search(
+        &self,
+        query: &str,
+        max_results: u32,
+    ) -> Result<SearchResponse, WebSearchError> {
         let url = format!("{}/search", self.base_url);
 
-        let response = self.client
+        let response = self
+            .client
             .post(&url)
             .header("Authorization", self.auth_header())
             .header("Content-Type", "application/json")
@@ -110,14 +117,20 @@ impl WebSearchProvider for TavilyProvider {
             .await?;
 
         Ok(SearchResponse {
-            organic: response.results.into_iter().map(|r| SearchResult {
-                title: r.title,
-                link: r.url,
-                snippet: r.content,
-                date: r.published_date,
-                favicon: r.favicon,
-            }).collect(),
-            related_searches: response.related_queries.into_iter()
+            organic: response
+                .results
+                .into_iter()
+                .map(|r| SearchResult {
+                    title: r.title,
+                    link: r.url,
+                    snippet: r.content,
+                    date: r.published_date,
+                    favicon: r.favicon,
+                })
+                .collect(),
+            related_searches: response
+                .related_queries
+                .into_iter()
                 .map(|rq| RelatedSearch { query: rq.query })
                 .collect(),
         })
@@ -126,7 +139,8 @@ impl WebSearchProvider for TavilyProvider {
     async fn fetch(&self, url: &str) -> Result<FetchResponse, WebSearchError> {
         let fetch_url = format!("{}/extract", self.base_url);
 
-        let response = self.client
+        let response = self
+            .client
             .post(&fetch_url)
             .header("Authorization", self.auth_header())
             .header("Content-Type", "application/json")
@@ -157,7 +171,10 @@ impl WebSearchProvider for TavilyProvider {
             }
         }
 
-        Err(WebSearchError::ParseError(format!("No results for URL: {}", url)))
+        Err(WebSearchError::ParseError(format!(
+            "No results for URL: {}",
+            url
+        )))
     }
 }
 
@@ -167,10 +184,8 @@ mod tests {
 
     #[test]
     fn test_provider_name() {
-        let provider = TavilyProvider::new(
-            "https://api.tavily.com".to_string(),
-            "test-key".to_string(),
-        );
+        let provider =
+            TavilyProvider::new("https://api.tavily.com".to_string(), "test-key".to_string());
         assert_eq!(provider.name(), "tavily");
     }
 
@@ -186,17 +201,13 @@ mod tests {
     #[tokio::test]
     #[ignore] // 需要 TAVILY_API_KEYS 环境变量
     async fn test_search_integration() {
-        let api_key = std::env::var("TAVILY_API_KEYS")
-            .unwrap_or_default();
+        let api_key = std::env::var("TAVILY_API_KEYS").unwrap_or_default();
         if api_key.is_empty() {
             eprintln!("跳过: TAVILY_API_KEYS 未设置");
             return;
         }
 
-        let provider = TavilyProvider::new(
-            "https://api.tavily.com".to_string(),
-            api_key,
-        );
+        let provider = TavilyProvider::new("https://api.tavily.com".to_string(), api_key);
 
         let result = provider.search("Rust programming language", 5).await;
         assert!(result.is_ok(), "搜索失败: {:?}", result);
@@ -221,10 +232,7 @@ mod tests {
             return;
         }
 
-        let provider = TavilyProvider::new(
-            "https://api.tavily.com".to_string(),
-            api_key,
-        );
+        let provider = TavilyProvider::new("https://api.tavily.com".to_string(), api_key);
 
         let result = provider.fetch("https://www.rust-lang.org/").await;
         assert!(result.is_ok(), "获取失败: {:?}", result);

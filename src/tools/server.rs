@@ -57,22 +57,19 @@ impl WebSearchMcpServer {
         description = "Search the web for information. Uses multiple providers (Tavily, MiniMax, ZhiPu) \
             with load balancing across API keys for reliability and rate limit handling."
     )]
-    fn web_search(
-        &self,
-        Parameters(params): Parameters<SearchParams>,
-    ) -> Result<String, McpError> {
+    fn web_search(&self, Parameters(params): Parameters<SearchParams>) -> Result<String, McpError> {
         // Note: Using sync function for rmcp compatibility
         // For async, would need different approach
         let runtime = tokio::runtime::Handle::current();
         runtime.block_on(async {
-            match self.load_balancer.search(&params.query, params.max_results).await {
-                Ok(response) => {
-                    Ok(serde_json::to_string_pretty(&response)
-                        .unwrap_or_else(|_| format!("{:?}", response)))
-                }
-                Err(e) => {
-                    Ok(format!("Search failed: {}", e))
-                }
+            match self
+                .load_balancer
+                .search(&params.query, params.max_results)
+                .await
+            {
+                Ok(response) => Ok(serde_json::to_string_pretty(&response)
+                    .unwrap_or_else(|_| format!("{:?}", response))),
+                Err(e) => Ok(format!("Search failed: {}", e)),
             }
         })
     }
@@ -82,20 +79,13 @@ impl WebSearchMcpServer {
         description = "Fetch and extract content from a URL. Returns markdown-formatted content. \
             Uses Tavily or ZhiPu provider (MiniMax does not support fetch)."
     )]
-    fn web_fetch(
-        &self,
-        Parameters(params): Parameters<FetchParams>,
-    ) -> Result<String, McpError> {
+    fn web_fetch(&self, Parameters(params): Parameters<FetchParams>) -> Result<String, McpError> {
         let runtime = tokio::runtime::Handle::current();
         runtime.block_on(async {
             match self.load_balancer.fetch(&params.url).await {
-                Ok(response) => {
-                    Ok(serde_json::to_string_pretty(&response)
-                        .unwrap_or_else(|_| format!("{:?}", response)))
-                }
-                Err(e) => {
-                    Ok(format!("Fetch failed: {}", e))
-                }
+                Ok(response) => Ok(serde_json::to_string_pretty(&response)
+                    .unwrap_or_else(|_| format!("{:?}", response))),
+                Err(e) => Ok(format!("Fetch failed: {}", e)),
             }
         })
     }

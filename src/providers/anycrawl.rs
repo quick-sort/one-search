@@ -50,7 +50,11 @@ impl WebSearchProvider for AnycrawlProvider {
         "anycrawl"
     }
 
-    async fn search(&self, _query: &str, _max_results: u32) -> Result<SearchResponse, WebSearchError> {
+    async fn search(
+        &self,
+        _query: &str,
+        _max_results: u32,
+    ) -> Result<SearchResponse, WebSearchError> {
         Err(WebSearchError::NotSupported(
             "AnyCrawl does not support web search".to_string(),
         ))
@@ -59,7 +63,8 @@ impl WebSearchProvider for AnycrawlProvider {
     async fn fetch(&self, url: &str) -> Result<FetchResponse, WebSearchError> {
         let fetch_url = format!("{}/v1/scrape", self.base_url);
 
-        let response = self.client
+        let response = self
+            .client
             .post(&fetch_url)
             .header("Authorization", self.auth_header())
             .header("Content-Type", "application/json")

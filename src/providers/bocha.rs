@@ -83,10 +83,15 @@ impl WebSearchProvider for BochaProvider {
         "bocha"
     }
 
-    async fn search(&self, query: &str, max_results: u32) -> Result<SearchResponse, WebSearchError> {
+    async fn search(
+        &self,
+        query: &str,
+        max_results: u32,
+    ) -> Result<SearchResponse, WebSearchError> {
         let url = format!("{}/v1/web-search", self.base_url);
 
-        let response = self.client
+        let response = self
+            .client
             .post(&url)
             .header("Authorization", self.auth_header())
             .header("Content-Type", "application/json")
@@ -103,22 +108,27 @@ impl WebSearchProvider for BochaProvider {
 
         self.check_response(&response)?;
 
-        let results = response.data.web_pages
+        let results = response
+            .data
+            .web_pages
             .map(|wp| wp.value)
             .unwrap_or_default();
 
         Ok(SearchResponse {
-            organic: results.into_iter().map(|r| {
-                // Use summary if available, otherwise snippet
-                let snippet = r.summary.unwrap_or(r.snippet.unwrap_or_default());
-                SearchResult {
-                    title: r.name,
-                    link: r.url,
-                    snippet,
-                    date: r.date_published,
-                    favicon: r.site_icon,
-                }
-            }).collect(),
+            organic: results
+                .into_iter()
+                .map(|r| {
+                    // Use summary if available, otherwise snippet
+                    let snippet = r.summary.unwrap_or(r.snippet.unwrap_or_default());
+                    SearchResult {
+                        title: r.name,
+                        link: r.url,
+                        snippet,
+                        date: r.date_published,
+                        favicon: r.site_icon,
+                    }
+                })
+                .collect(),
             related_searches: Vec::new(), // Bocha doesn't provide related searches
         })
     }
@@ -137,10 +147,8 @@ mod tests {
 
     #[test]
     fn test_provider_name() {
-        let provider = BochaProvider::new(
-            "https://api.bocha.cn".to_string(),
-            "test-key".to_string(),
-        );
+        let provider =
+            BochaProvider::new("https://api.bocha.cn".to_string(), "test-key".to_string());
         assert_eq!(provider.name(), "bocha");
     }
 
@@ -162,10 +170,7 @@ mod tests {
             return;
         }
 
-        let provider = BochaProvider::new(
-            "https://api.bocha.cn".to_string(),
-            api_key,
-        );
+        let provider = BochaProvider::new("https://api.bocha.cn".to_string(), api_key);
 
         let result = provider.search("阿里巴巴ESG报告", 5).await;
         assert!(result.is_ok(), "搜索失败: {:?}", result);

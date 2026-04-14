@@ -74,10 +74,15 @@ impl WebSearchProvider for SerperProvider {
         "serper"
     }
 
-    async fn search(&self, query: &str, max_results: u32) -> Result<SearchResponse, WebSearchError> {
+    async fn search(
+        &self,
+        query: &str,
+        max_results: u32,
+    ) -> Result<SearchResponse, WebSearchError> {
         let url = format!("{}/search", self.base_url);
 
-        let response = self.client
+        let response = self
+            .client
             .post(&url)
             .header("X-API-KEY", self.auth_header())
             .header("Content-Type", "application/json")
@@ -90,17 +95,23 @@ impl WebSearchProvider for SerperProvider {
             .json::<SerperSearchResponse>()
             .await?;
 
-        let organic: Vec<SearchResult> = response.organic.into_iter().map(|r| {
-            SearchResult {
-                title: r.title,
-                link: r.link,
-                snippet: r.snippet.unwrap_or_default(),
-                date: None, // Serper doesn't provide date
-                favicon: None, // Serper doesn't provide favicon
-            }
-        }).collect();
+        let organic: Vec<SearchResult> = response
+            .organic
+            .into_iter()
+            .map(|r| {
+                SearchResult {
+                    title: r.title,
+                    link: r.link,
+                    snippet: r.snippet.unwrap_or_default(),
+                    date: None,    // Serper doesn't provide date
+                    favicon: None, // Serper doesn't provide favicon
+                }
+            })
+            .collect();
 
-        let related_searches = response.related_searches.into_iter()
+        let related_searches = response
+            .related_searches
+            .into_iter()
             .map(|rs| crate::providers::RelatedSearch { query: rs.query })
             .collect();
 
@@ -113,7 +124,8 @@ impl WebSearchProvider for SerperProvider {
     async fn fetch(&self, url: &str) -> Result<FetchResponse, WebSearchError> {
         let scrape_url = format!("{}/scrape", self.base_url);
 
-        let response = self.client
+        let response = self
+            .client
             .post(&scrape_url)
             .header("X-API-KEY", self.auth_header())
             .header("Content-Type", "application/json")

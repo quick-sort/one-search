@@ -7,11 +7,11 @@
 use std::path::PathBuf;
 
 use anyhow::Context;
-use rmcp::transport::async_rw::AsyncRwTransport;
-use tracing_subscriber::EnvFilter;
 use one_search::config::Config;
 use one_search::tools::WebSearchMcpServer;
 use one_search::WebSearchError;
+use rmcp::transport::async_rw::AsyncRwTransport;
+use tracing_subscriber::EnvFilter;
 
 /// Default config file path: ./config.yaml
 fn default_config_path() -> PathBuf {
@@ -67,8 +67,7 @@ async fn main() -> anyhow::Result<()> {
     // Initialize logging
     tracing_subscriber::fmt()
         .with_env_filter(
-            EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| EnvFilter::new("info")),
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
         )
         .with_target(false)
         .init();
@@ -84,8 +83,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("MCP server initialized, waiting for connections via stdio...");
 
     // Create MCP server
-    let server = WebSearchMcpServer::new(&config)
-        .context("Failed to create MCP server")?;
+    let server = WebSearchMcpServer::new(&config).context("Failed to create MCP server")?;
 
     // Serve via stdio transport
     let stdin = tokio::io::stdin();

@@ -1,7 +1,9 @@
 //! ZhiPu (智普) web search provider implementation.
 
 use crate::error::WebSearchError;
-use crate::providers::trait_def::{FetchResponse, RelatedSearch, SearchResponse, SearchResult, WebSearchProvider};
+use crate::providers::trait_def::{
+    FetchResponse, RelatedSearch, SearchResponse, SearchResult, WebSearchProvider,
+};
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::Deserialize;
@@ -105,7 +107,11 @@ impl WebSearchProvider for ZhiPuProvider {
         "zhipu"
     }
 
-    async fn search(&self, query: &str, max_results: u32) -> Result<SearchResponse, WebSearchError> {
+    async fn search(
+        &self,
+        query: &str,
+        max_results: u32,
+    ) -> Result<SearchResponse, WebSearchError> {
         // 根据 api_variant 选择端点路径
         // standard: /api/paas/v4/web_search
         // coding: /api/coding/paas/v4/web_search
@@ -115,7 +121,8 @@ impl WebSearchProvider for ZhiPuProvider {
         };
         let url = format!("{}{}/web_search", self.base_url, api_path);
 
-        let response = self.client
+        let response = self
+            .client
             .post(&url)
             .header("Authorization", self.auth_header())
             .header("Content-Type", "application/json")
@@ -130,18 +137,26 @@ impl WebSearchProvider for ZhiPuProvider {
             .await?;
 
         Ok(SearchResponse {
-            organic: response.results.into_iter().filter_map(|r| {
-                let link = r.link.unwrap_or_default();
-                if link.is_empty() { return None; }
-                Some(SearchResult {
-                    title: r.title,
-                    link,
-                    snippet: r.content,
-                    date: r.publish_date,
-                    favicon: r.icon.clone(),
+            organic: response
+                .results
+                .into_iter()
+                .filter_map(|r| {
+                    let link = r.link.unwrap_or_default();
+                    if link.is_empty() {
+                        return None;
+                    }
+                    Some(SearchResult {
+                        title: r.title,
+                        link,
+                        snippet: r.content,
+                        date: r.publish_date,
+                        favicon: r.icon.clone(),
+                    })
                 })
-            }).collect(),
-            related_searches: response.search_intent.into_iter()
+                .collect(),
+            related_searches: response
+                .search_intent
+                .into_iter()
                 .map(|si| RelatedSearch { query: si.query })
                 .collect(),
         })
@@ -154,7 +169,8 @@ impl WebSearchProvider for ZhiPuProvider {
         };
         let fetch_url = format!("{}{}/reader", self.base_url, api_path);
 
-        let response = self.client
+        let response = self
+            .client
             .post(&fetch_url)
             .header("Authorization", self.auth_header())
             .header("Content-Type", "application/json")
@@ -208,10 +224,7 @@ mod tests {
             return;
         }
 
-        let provider = ZhiPuProvider::new(
-            "https://open.bigmodel.cn".to_string(),
-            api_key,
-        );
+        let provider = ZhiPuProvider::new("https://open.bigmodel.cn".to_string(), api_key);
 
         let result = provider.search("Rust 编程语言", 5).await;
         assert!(result.is_ok(), "搜索失败: {:?}", result);
@@ -235,10 +248,7 @@ mod tests {
             return;
         }
 
-        let provider = ZhiPuProvider::new(
-            "https://open.bigmodel.cn".to_string(),
-            api_key,
-        );
+        let provider = ZhiPuProvider::new("https://open.bigmodel.cn".to_string(), api_key);
 
         let result = provider.fetch("https://www.rust-lang.org/zh-CN/").await;
         assert!(result.is_ok(), "获取失败: {:?}", result);
@@ -256,11 +266,8 @@ mod tests {
             return;
         }
 
-        let provider = ZhiPuProvider::with_variant(
-            "https://open.bigmodel.cn".to_string(),
-            api_key,
-            "coding",
-        );
+        let provider =
+            ZhiPuProvider::with_variant("https://open.bigmodel.cn".to_string(), api_key, "coding");
 
         let result = provider.search("Rust 编程语言", 5).await;
         assert!(result.is_ok(), "搜索失败: {:?}", result);
@@ -288,11 +295,8 @@ mod tests {
             return;
         }
 
-        let provider = ZhiPuProvider::with_variant(
-            "https://open.bigmodel.cn".to_string(),
-            api_key,
-            "coding",
-        );
+        let provider =
+            ZhiPuProvider::with_variant("https://open.bigmodel.cn".to_string(), api_key, "coding");
 
         let result = provider.fetch("https://www.rust-lang.org/zh-CN/").await;
         assert!(result.is_ok(), "获取失败: {:?}", result);

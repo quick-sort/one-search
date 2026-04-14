@@ -1,7 +1,9 @@
 //! MiniMax (Coding Plan) web search provider implementation.
 
 use crate::error::WebSearchError;
-use crate::providers::trait_def::{FetchResponse, RelatedSearch, SearchResponse, SearchResult, WebSearchProvider};
+use crate::providers::trait_def::{
+    FetchResponse, RelatedSearch, SearchResponse, SearchResult, WebSearchProvider,
+};
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::Deserialize;
@@ -74,7 +76,9 @@ impl MiniMaxProvider {
         if response.base_resp.status_code != 0 {
             match response.base_resp.status_code {
                 1004 => {
-                    return Err(WebSearchError::AuthError(response.base_resp.status_msg.clone()));
+                    return Err(WebSearchError::AuthError(
+                        response.base_resp.status_msg.clone(),
+                    ));
                 }
                 2038 => {
                     return Err(WebSearchError::AuthError(format!(
@@ -100,10 +104,15 @@ impl WebSearchProvider for MiniMaxProvider {
         "minimax"
     }
 
-    async fn search(&self, query: &str, max_results: u32) -> Result<SearchResponse, WebSearchError> {
+    async fn search(
+        &self,
+        query: &str,
+        max_results: u32,
+    ) -> Result<SearchResponse, WebSearchError> {
         let url = format!("{}/v1/coding_plan/search", self.base_url);
 
-        let response = self.client
+        let response = self
+            .client
             .post(&url)
             .header("Authorization", self.auth_header())
             .header("Content-Type", "application/json")
@@ -120,14 +129,20 @@ impl WebSearchProvider for MiniMaxProvider {
         self.check_response(&response)?;
 
         Ok(SearchResponse {
-            organic: response.organic.into_iter().map(|r| SearchResult {
-                title: r.title,
-                link: r.link,
-                snippet: r.snippet,
-                date: r.date,
-                favicon: None, // MiniMax doesn't provide favicon
-            }).collect(),
-            related_searches: response.related_searches.into_iter()
+            organic: response
+                .organic
+                .into_iter()
+                .map(|r| SearchResult {
+                    title: r.title,
+                    link: r.link,
+                    snippet: r.snippet,
+                    date: r.date,
+                    favicon: None, // MiniMax doesn't provide favicon
+                })
+                .collect(),
+            related_searches: response
+                .related_searches
+                .into_iter()
                 .map(|rs| RelatedSearch { query: rs.query })
                 .collect(),
         })
@@ -172,10 +187,7 @@ mod tests {
             return;
         }
 
-        let provider = MiniMaxProvider::new(
-            "https://api.minimaxi.com".to_string(),
-            api_key,
-        );
+        let provider = MiniMaxProvider::new("https://api.minimaxi.com".to_string(), api_key);
 
         let result = provider.search("Rust programming", 5).await;
         assert!(result.is_ok(), "搜索失败: {:?}", result);

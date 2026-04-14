@@ -69,10 +69,15 @@ impl WebSearchProvider for SerpApiProvider {
         "serpapi"
     }
 
-    async fn search(&self, query: &str, max_results: u32) -> Result<SearchResponse, WebSearchError> {
+    async fn search(
+        &self,
+        query: &str,
+        max_results: u32,
+    ) -> Result<SearchResponse, WebSearchError> {
         let url = format!("{}/search", self.base_url);
 
-        let response = self.client
+        let response = self
+            .client
             .get(&url)
             .query(&[
                 ("engine", "google"),
@@ -88,18 +93,22 @@ impl WebSearchProvider for SerpApiProvider {
             .await?;
 
         // Build search results
-        let organic: Vec<SearchResult> = response.organic_results.into_iter().map(|r| {
-            SearchResult {
+        let organic: Vec<SearchResult> = response
+            .organic_results
+            .into_iter()
+            .map(|r| SearchResult {
                 title: r.title,
                 link: r.link,
                 snippet: r.snippet.unwrap_or_default(),
                 date: r.date,
                 favicon: r.favicon,
-            }
-        }).collect();
+            })
+            .collect();
 
         // Build related searches from related_questions
-        let related_searches = response.related_questions.into_iter()
+        let related_searches = response
+            .related_questions
+            .into_iter()
             .map(|rq| crate::providers::RelatedSearch { query: rq.question })
             .collect();
 
@@ -122,10 +131,8 @@ mod tests {
 
     #[test]
     fn test_provider_name() {
-        let provider = SerpApiProvider::new(
-            "https://serpapi.com".to_string(),
-            "test-key".to_string(),
-        );
+        let provider =
+            SerpApiProvider::new("https://serpapi.com".to_string(), "test-key".to_string());
         assert_eq!(provider.name(), "serpapi");
     }
 }

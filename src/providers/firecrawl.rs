@@ -84,10 +84,15 @@ impl WebSearchProvider for FirecrawlProvider {
         "firecrawl"
     }
 
-    async fn search(&self, query: &str, max_results: u32) -> Result<SearchResponse, WebSearchError> {
+    async fn search(
+        &self,
+        query: &str,
+        max_results: u32,
+    ) -> Result<SearchResponse, WebSearchError> {
         let url = format!("{}/v2/search", self.base_url);
 
-        let response = self.client
+        let response = self
+            .client
             .post(&url)
             .header("Authorization", self.auth_header())
             .header("Content-Type", "application/json")
@@ -101,19 +106,27 @@ impl WebSearchProvider for FirecrawlProvider {
             .await?;
 
         if !response.success {
-            return Err(WebSearchError::ProviderError(500, "Firecrawl search failed".to_string()));
+            return Err(WebSearchError::ProviderError(
+                500,
+                "Firecrawl search failed".to_string(),
+            ));
         }
 
         // Firecrawl returns results in data.web array
-        let results: Vec<SearchResult> = response.data.web.into_iter().map(|r| {
-            SearchResult {
-                title: r.title,
-                link: r.url,
-                snippet: r.description.unwrap_or_default(),
-                date: None, // Firecrawl doesn't provide date
-                favicon: None, // Firecrawl doesn't provide favicon
-            }
-        }).collect();
+        let results: Vec<SearchResult> = response
+            .data
+            .web
+            .into_iter()
+            .map(|r| {
+                SearchResult {
+                    title: r.title,
+                    link: r.url,
+                    snippet: r.description.unwrap_or_default(),
+                    date: None,    // Firecrawl doesn't provide date
+                    favicon: None, // Firecrawl doesn't provide favicon
+                }
+            })
+            .collect();
 
         Ok(SearchResponse {
             organic: results,
@@ -124,7 +137,8 @@ impl WebSearchProvider for FirecrawlProvider {
     async fn fetch(&self, url: &str) -> Result<FetchResponse, WebSearchError> {
         let fetch_url = format!("{}/v2/scrape", self.base_url);
 
-        let response = self.client
+        let response = self
+            .client
             .post(&fetch_url)
             .header("Authorization", self.auth_header())
             .header("Content-Type", "application/json")
@@ -138,7 +152,10 @@ impl WebSearchProvider for FirecrawlProvider {
             .await?;
 
         if !response.success {
-            return Err(WebSearchError::ProviderError(500, "Firecrawl scrape failed".to_string()));
+            return Err(WebSearchError::ProviderError(
+                500,
+                "Firecrawl scrape failed".to_string(),
+            ));
         }
 
         let content = response.data.markdown.unwrap_or_default();

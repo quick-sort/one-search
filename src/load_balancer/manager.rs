@@ -108,8 +108,7 @@ impl ProviderLoadBalancer {
                                     base_url.to_string(),
                                     key.clone(),
                                     api_variant,
-                                ))
-                                    as Arc<dyn WebSearchProvider>
+                                )) as Arc<dyn WebSearchProvider>
                             })
                             .collect()
                     }
@@ -168,7 +167,8 @@ impl ProviderLoadBalancer {
                 entries.push(ProviderEntry {
                     provider_name: provider_config.name.clone(),
                     key_index,
-                    supports_fetch: !["minimaxi", "minimax_io", "bocha", "serpapi"].contains(&provider_config.name.as_str()), // MiniMax, Bocha, and SerpAPI don't support fetch
+                    supports_fetch: !["minimaxi", "minimax_io", "bocha", "serpapi"]
+                        .contains(&provider_config.name.as_str()), // MiniMax, Bocha, and SerpAPI don't support fetch
                     provider,
                 });
             }
@@ -208,7 +208,11 @@ impl ProviderLoadBalancer {
     }
 
     /// Search using the configured providers with load balancing.
-    pub async fn search(&self, query: &str, max_results: u32) -> Result<SearchResponse, WebSearchError> {
+    pub async fn search(
+        &self,
+        query: &str,
+        max_results: u32,
+    ) -> Result<SearchResponse, WebSearchError> {
         if self.fallback {
             // Try all providers in strategy order
             let mut tried = vec![false; self.entries.len()];
@@ -308,11 +312,7 @@ impl ProviderLoadBalancer {
                 match entry.provider.fetch(url).await {
                     Ok(response) => return Ok(response),
                     Err(e) => {
-                        tracing::warn!(
-                            "Provider '{}' fetch failed: {}",
-                            entry.provider_name,
-                            e
-                        );
+                        tracing::warn!("Provider '{}' fetch failed: {}", entry.provider_name, e);
                     }
                 }
             }
@@ -407,13 +407,25 @@ mod tests {
                 };
                 let (base_url, provider_name) = match name {
                     "tavily" => ("https://api.tavily.com".to_string(), "tavily".to_string()),
-                    "minimaxi" => ("https://api.minimaxi.com".to_string(), "minimaxi".to_string()),
+                    "minimaxi" => (
+                        "https://api.minimaxi.com".to_string(),
+                        "minimaxi".to_string(),
+                    ),
                     "zhipu" => ("https://open.bigmodel.cn".to_string(), "zhipu".to_string()),
                     "bocha" => ("https://api.bocha.cn".to_string(), "bocha".to_string()),
-                    "firecrawl" => ("https://api.firecrawl.dev".to_string(), "firecrawl".to_string()),
-                    "anycrawl" => ("https://api.anycrawl.dev".to_string(), "anycrawl".to_string()),
+                    "firecrawl" => (
+                        "https://api.firecrawl.dev".to_string(),
+                        "firecrawl".to_string(),
+                    ),
+                    "anycrawl" => (
+                        "https://api.anycrawl.dev".to_string(),
+                        "anycrawl".to_string(),
+                    ),
                     "serpapi" => ("https://serpapi.com".to_string(), "serpapi".to_string()),
-                    "serper" => ("https://google.serper.dev".to_string(), "serper".to_string()),
+                    "serper" => (
+                        "https://google.serper.dev".to_string(),
+                        "serper".to_string(),
+                    ),
                     _ => return None,
                 };
                 Some(ProviderConfig {
@@ -444,16 +456,14 @@ mod tests {
     #[tokio::test]
     #[ignore] // 需要 TAVILY_API_KEYS 和/或 GLM_API_KEYS
     async fn test_search_integration() {
-        let config = match integration_config(&[
-            ("tavily", "TAVILY_API_KEYS"),
-            ("zhipu", "GLM_API_KEYS"),
-        ]) {
-            Some(c) => c,
-            None => {
-                eprintln!("跳过: 未设置 TAVILY_API_KEYS 或 GLM_API_KEYS");
-                return;
-            }
-        };
+        let config =
+            match integration_config(&[("tavily", "TAVILY_API_KEYS"), ("zhipu", "GLM_API_KEYS")]) {
+                Some(c) => c,
+                None => {
+                    eprintln!("跳过: 未设置 TAVILY_API_KEYS 或 GLM_API_KEYS");
+                    return;
+                }
+            };
         let lb = ProviderLoadBalancer::from_config(&config).unwrap();
 
         let result = lb.search("Rust programming language", 5).await;
@@ -467,16 +477,14 @@ mod tests {
     #[tokio::test]
     #[ignore] // 需要 TAVILY_API_KEYS 和/或 GLM_API_KEYS
     async fn test_fetch_integration() {
-        let config = match integration_config(&[
-            ("tavily", "TAVILY_API_KEYS"),
-            ("zhipu", "GLM_API_KEYS"),
-        ]) {
-            Some(c) => c,
-            None => {
-                eprintln!("跳过: 未设置 TAVILY_API_KEYS 或 GLM_API_KEYS");
-                return;
-            }
-        };
+        let config =
+            match integration_config(&[("tavily", "TAVILY_API_KEYS"), ("zhipu", "GLM_API_KEYS")]) {
+                Some(c) => c,
+                None => {
+                    eprintln!("跳过: 未设置 TAVILY_API_KEYS 或 GLM_API_KEYS");
+                    return;
+                }
+            };
         let lb = ProviderLoadBalancer::from_config(&config).unwrap();
 
         let result = lb.fetch("https://www.rust-lang.org/").await;
@@ -489,9 +497,7 @@ mod tests {
     #[tokio::test]
     #[ignore] // 需要 GLM_API_KEYS（fallback 场景）
     async fn test_fallback_integration() {
-        let mut config = match integration_config(&[
-            ("zhipu", "GLM_API_KEYS"),
-        ]) {
+        let mut config = match integration_config(&[("zhipu", "GLM_API_KEYS")]) {
             Some(c) => c,
             None => {
                 eprintln!("跳过: 未设置 GLM_API_KEYS");
@@ -499,13 +505,16 @@ mod tests {
             }
         };
         // 在最前面插入一个无效 provider，测试 fallback
-        config.providers.insert(0, ProviderConfig {
-            name: "tavily_invalid".to_string(),
-            enabled: true,
-            base_url: "https://api.tavily.com".to_string(),
-            api_keys: vec!["tvly-invalid-key-for-testing".to_string()],
-            settings: Default::default(),
-        });
+        config.providers.insert(
+            0,
+            ProviderConfig {
+                name: "tavily_invalid".to_string(),
+                enabled: true,
+                base_url: "https://api.tavily.com".to_string(),
+                api_keys: vec!["tvly-invalid-key-for-testing".to_string()],
+                settings: Default::default(),
+            },
+        );
 
         let lb = ProviderLoadBalancer::from_config(&config).unwrap();
         // 虽然 tavily 会失败，但 fallback 到 zhipu 应该成功
