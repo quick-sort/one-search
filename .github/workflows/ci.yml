@@ -44,8 +44,8 @@ jobs:
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
-    # Only run if API keys are provided in secrets
-    if: vars.TAVILY_API_KEY != '' || vars.GLM_API_KEY != '' || vars.MINIMAX_API_KEY != '' || vars.GLM_CODING_API_KEY != '' || vars.BOCHA_API_KEY != ''
+    # Check if any API keys are configured (KEYS variable must be non-empty JSON array)
+    if: vars.TAVILY_API_KEYS != '' || vars.GLM_API_KEYS != '' || vars.MINIMAX_API_KEYS != '' || vars.GLM_CODING_API_KEYS != '' || vars.BOCHA_API_KEYS != '' || vars.FIRECRAWL_API_KEYS != '' || vars.SERPAPI_API_KEYS != '' || vars.SERPER_API_KEYS != '' || vars.ANYCRAWL_API_KEYS != ''
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -60,35 +60,32 @@ jobs:
         with:
           shared-key: websearch
 
-      - name: Set environment variables from secrets (single keys)
+      - name: Set environment variables from secrets (array format)
         run: |
-          if [ -n "${{ vars.TAVILY_API_KEY }}" ]; then
-            echo "TAVILY_API_KEY=${{ vars.TAVILY_API_KEY }}" >> $GITHUB_ENV
-          fi
-          if [ -n "${{ vars.GLM_API_KEY }}" ]; then
-            echo "GLM_API_KEY=${{ vars.GLM_API_KEY }}" >> $GITHUB_ENV
-          fi
-          if [ -n "${{ vars.GLM_CODING_API_KEY }}" ]; then
-            echo "GLM_CODING_API_KEY=${{ vars.GLM_CODING_API_KEY }}" >> $GITHUB_ENV
-          fi
-          if [ -n "${{ vars.MINIMAX_API_KEY }}" ]; then
-            echo "MINIMAX_API_KEY=${{ vars.MINIMAX_API_KEY }}" >> $GITHUB_ENV
-          fi
-          if [ -n "${{ vars.BOCHA_API_KEY }}" ]; then
-            echo "BOCHA_API_KEY=${{ vars.BOCHA_API_KEY }}" >> $GITHUB_ENV
-          fi
-          if [ -n "${{ vars.SERPAPI_API_KEY }}" ]; then
-            echo "SERPAPI_API_KEY=${{ vars.SERPAPI_API_KEY }}" >> $GITHUB_ENV
-          fi
-          if [ -n "${{ vars.SERPER_API_KEY }}" ]; then
-            echo "SERPER_API_KEY=${{ vars.SERPER_API_KEY }}" >> $GITHUB_ENV
-          fi
-          if [ -n "${{ vars.FIRECRAWL_API_KEY }}" ]; then
-            echo "FIRECRAWL_API_KEY=${{ vars.FIRECRAWL_API_KEY }}" >> $GITHUB_ENV
-          fi
-          if [ -n "${{ vars.ANYCRAWL_API_KEY }}" ]; then
-            echo "ANYCRAWL_API_KEY=${{ vars.ANYCRAWL_API_KEY }}" >> $GITHUB_ENV
-          fi
+          # Parse JSON array and extract first key
+          parse_key() {
+            local var_name="$1"
+            local secrets_var="${var_name}S"
+            local value="${{ vars.${secrets_var} }}"
+            if [ -n "$value" ] && [ "$value" != "[]" ]; then
+              # Extract first element from JSON array: ["key1","key2"] -> "key1"
+              key=$(echo "$value" | python3 -c "import sys,json; keys=json.load(sys.stdin); print(keys[0] if keys else '')" 2>/dev/null)
+              if [ -n "$key" ]; then
+                echo "${var_name}=$key" >> $GITHUB_ENV
+                echo "Set ${var_name} from ${secrets_var}"
+              fi
+            fi
+          }
+
+          parse_key "TAVILY_API_KEY"
+          parse_key "GLM_API_KEY"
+          parse_key "GLM_CODING_API_KEY"
+          parse_key "MINIMAX_API_KEY"
+          parse_key "BOCHA_API_KEY"
+          parse_key "SERPAPI_API_KEY"
+          parse_key "SERPER_API_KEY"
+          parse_key "FIRECRAWL_API_KEY"
+          parse_key "ANYCRAWL_API_KEY"
 
       - name: Build
         run: cargo build --all
