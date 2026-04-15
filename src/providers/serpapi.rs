@@ -12,6 +12,7 @@ struct SerpApiResponse {
     #[serde(default)]
     organic_results: Vec<SerpApiResult>,
     #[serde(default)]
+    #[allow(dead_code)]
     search_information: Option<SerpApiSearchInfo>,
     #[serde(default)]
     related_questions: Vec<SerpApiRelatedQuestion>,
@@ -21,6 +22,7 @@ struct SerpApiResponse {
 #[derive(Debug, Deserialize)]
 struct SerpApiSearchInfo {
     #[serde(default)]
+    #[allow(dead_code)]
     query_displayed: Option<String>,
 }
 
@@ -34,6 +36,7 @@ struct SerpApiResult {
     #[serde(default)]
     date: Option<String>,
     #[serde(default)]
+    #[allow(dead_code)]
     displayed_link: Option<String>,
     #[serde(default)]
     favicon: Option<String>,

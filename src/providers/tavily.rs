@@ -50,6 +50,7 @@ struct TavilyExtractResult {
     #[serde(alias = "content")] // fallback if raw_content not present
     raw_content: String,
     #[serde(default)]
+    #[allow(dead_code)]
     images: Vec<String>,
 }
 

@@ -15,7 +15,7 @@ pub enum ConfigError {
 }
 
 /// Main configuration structure.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Config {
     #[serde(default)]
     pub server: ServerConfig,
@@ -24,17 +24,6 @@ pub struct Config {
     #[serde(default)]
     pub provider_strategy: LoadBalanceStrategy,
     pub providers: Vec<ProviderConfig>,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            server: ServerConfig::default(),
-            key_strategy: LoadBalanceStrategy::default(),
-            provider_strategy: LoadBalanceStrategy::default(),
-            providers: Vec::new(),
-        }
-    }
 }
 
 /// Server metadata configuration.

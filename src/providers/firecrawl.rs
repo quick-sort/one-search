@@ -42,6 +42,7 @@ struct FirecrawlScrapeData {
     #[serde(default)]
     markdown: Option<String>,
     #[serde(default)]
+    #[allow(dead_code)]
     html: Option<String>,
     #[serde(default)]
     metadata: Option<FirecrawlMetadata>,
@@ -53,6 +54,7 @@ struct FirecrawlMetadata {
     #[serde(default)]
     title: Option<String>,
     #[serde(default)]
+    #[allow(dead_code)]
     description: Option<String>,
 }
 

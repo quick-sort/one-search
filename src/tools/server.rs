@@ -35,6 +35,7 @@ pub struct FetchParams {
 
 /// MCP server for web search load balancing.
 pub struct WebSearchMcpServer {
+    #[allow(dead_code)]
     tool_router: ToolRouter<Self>,
     load_balancer: ProviderLoadBalancer,
 }

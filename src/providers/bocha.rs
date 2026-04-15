@@ -38,6 +38,7 @@ struct BochaResult {
     #[serde(default)]
     summary: Option<String>,
     #[serde(rename = "siteName", default)]
+    #[allow(dead_code)]
     site_name: Option<String>,
     #[serde(rename = "siteIcon", default)]
     site_icon: Option<String>,

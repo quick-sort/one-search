@@ -11,6 +11,7 @@ use serde::Deserialize;
 /// ZhiPu API search response.
 #[derive(Debug, Deserialize)]
 struct ZhiPuSearchResponse {
+    #[allow(dead_code)]
     id: Option<String>,
     #[serde(default, alias = "search_result")]
     results: Vec<ZhiPuResult>,
@@ -26,6 +27,7 @@ struct ZhiPuResult {
     link: Option<String>,
     content: String,
     #[serde(default)]
+    #[allow(dead_code)]
     media: Option<String>,
     #[serde(default)]
     icon: Option<String>,
@@ -38,13 +40,16 @@ struct ZhiPuResult {
 struct ZhiPuSearchIntent {
     query: String,
     #[serde(rename = "intent")]
+    #[allow(dead_code)]
     intent_type: String,
+    #[allow(dead_code)]
     keywords: String,
 }
 
 /// ZhiPu API reader (fetch) response.
 #[derive(Debug, Deserialize)]
 struct ZhiPuReaderResponse {
+    #[allow(dead_code)]
     id: Option<String>,
     #[serde(default)]
     reader_result: ZhiPuReaderResult,
@@ -56,10 +61,12 @@ struct ZhiPuReaderResult {
     #[serde(default)]
     content: Option<String>,
     #[serde(default)]
+    #[allow(dead_code)]
     description: Option<String>,
     #[serde(default)]
     title: Option<String>,
     #[serde(default)]
+    #[allow(dead_code)]
     url: Option<String>,
 }
 

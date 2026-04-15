@@ -1,6 +1,6 @@
 //! Load balancer manager for providers and API keys.
 
-use crate::config::{Config, LoadBalanceStrategy, ProviderConfig};
+use crate::config::Config;
 use crate::error::WebSearchError;
 use crate::load_balancer::strategy::{create_strategy, SelectionStrategy};
 use crate::providers::anycrawl::AnycrawlProvider;
@@ -82,8 +82,7 @@ impl ProviderLoadBalancer {
                     "tavily" => provider_config
                         .api_keys
                         .iter()
-                        .enumerate()
-                        .map(|(_, key)| {
+                        .map(|key| {
                             Arc::new(TavilyProvider::new(base_url.to_string(), key.clone()))
                                 as Arc<dyn WebSearchProvider>
                         })
@@ -91,8 +90,7 @@ impl ProviderLoadBalancer {
                     "minimaxi" | "minimax_io" => provider_config
                         .api_keys
                         .iter()
-                        .enumerate()
-                        .map(|(_, key)| {
+                        .map(|key| {
                             Arc::new(MiniMaxProvider::new(base_url.to_string(), key.clone()))
                                 as Arc<dyn WebSearchProvider>
                         })
@@ -102,8 +100,7 @@ impl ProviderLoadBalancer {
                         provider_config
                             .api_keys
                             .iter()
-                            .enumerate()
-                            .map(|(_, key)| {
+                            .map(|key| {
                                 Arc::new(ZhiPuProvider::with_variant(
                                     base_url.to_string(),
                                     key.clone(),
@@ -115,8 +112,7 @@ impl ProviderLoadBalancer {
                     "bocha" => provider_config
                         .api_keys
                         .iter()
-                        .enumerate()
-                        .map(|(_, key)| {
+                        .map(|key| {
                             Arc::new(BochaProvider::new(base_url.to_string(), key.clone()))
                                 as Arc<dyn WebSearchProvider>
                         })
@@ -124,8 +120,7 @@ impl ProviderLoadBalancer {
                     "firecrawl" => provider_config
                         .api_keys
                         .iter()
-                        .enumerate()
-                        .map(|(_, key)| {
+                        .map(|key| {
                             Arc::new(FirecrawlProvider::new(base_url.to_string(), key.clone()))
                                 as Arc<dyn WebSearchProvider>
                         })
@@ -133,8 +128,7 @@ impl ProviderLoadBalancer {
                     "anycrawl" => provider_config
                         .api_keys
                         .iter()
-                        .enumerate()
-                        .map(|(_, key)| {
+                        .map(|key| {
                             Arc::new(AnycrawlProvider::new(base_url.to_string(), key.clone()))
                                 as Arc<dyn WebSearchProvider>
                         })
@@ -142,8 +136,7 @@ impl ProviderLoadBalancer {
                     "serpapi" => provider_config
                         .api_keys
                         .iter()
-                        .enumerate()
-                        .map(|(_, key)| {
+                        .map(|key| {
                             Arc::new(SerpApiProvider::new(base_url.to_string(), key.clone()))
                                 as Arc<dyn WebSearchProvider>
                         })
@@ -151,8 +144,7 @@ impl ProviderLoadBalancer {
                     "serper" => provider_config
                         .api_keys
                         .iter()
-                        .enumerate()
-                        .map(|(_, key)| {
+                        .map(|key| {
                             Arc::new(SerperProvider::new(base_url.to_string(), key.clone()))
                                 as Arc<dyn WebSearchProvider>
                         })
@@ -331,6 +323,7 @@ impl ProviderLoadBalancer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::{LoadBalanceStrategy, ProviderConfig};
 
     fn sample_config() -> Config {
         Config {

@@ -9,6 +9,7 @@ use serde::Deserialize;
 /// AnyCrawl scrape response.
 #[derive(Debug, Deserialize)]
 struct AnyCrawlResponse {
+    #[allow(dead_code)]
     success: bool,
     data: Option<AnyCrawlData>,
 }
