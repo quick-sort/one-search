@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  RUST_VERSION: "1.85"
+  RUST_VERSION: "1.94.1"
   CARGO_TERM_COLOR: always
 
 jobs:

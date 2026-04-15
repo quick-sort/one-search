@@ -6,7 +6,7 @@ on:
       - "v*.*.*"
 
 env:
-  RUST_VERSION: "1.85"
+  RUST_VERSION: "1.94.1"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
