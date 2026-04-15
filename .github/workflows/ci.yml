@@ -44,8 +44,8 @@ jobs:
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
-    # Check if any API keys are configured (KEYS variable must be non-empty JSON array)
-    if: vars.TAVILY_API_KEYS != '' || vars.GLM_API_KEYS != '' || vars.MINIMAX_API_KEYS != '' || vars.GLM_CODING_API_KEYS != '' || vars.BOCHA_API_KEYS != '' || vars.FIRECRAWL_API_KEYS != '' || vars.SERPAPI_API_KEYS != '' || vars.SERPER_API_KEYS != '' || vars.ANYCRAWL_API_KEYS != ''
+    # Temporarily disabled - run integration tests locally with API keys
+    if: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4

@@ -29,6 +29,8 @@ A Rust-based MCP (Model Context Protocol) server that provides `web_search` and 
 | [AnyCrawl](https://anycrawl.dev) | `anycrawl` | ❌ | ✅ | `https://api.anycrawl.dev` |
 | [SerpAPI](https://serpapi.com) | `serpapi` | ✅ | ❌ | `https://serpapi.com` |
 | [Serper](https://serper.dev) | `serper` | ✅ | ✅ | `https://google.serper.dev` |
+| [Brave Search](https://brave.com/search/api/) | `brave` | ✅ | ❌ | `https://api.search.brave.com` |
+| [Jina](https://jina.ai) | `jina` | ✅ | ✅ | `https://r.jina.ai` |
 
 > For ZhiPu Coding, set `api_variant: "coding"` in settings.
 
@@ -238,15 +240,6 @@ GitHub Actions workflows:
 | CI | push/PR (main) | Format, Clippy, Tests, Build |
 | Release | tag push (v*.*.*) | Multi-platform Docker + Binary |
 
-### GitHub Secrets
-
-Add to `Settings > Secrets and variables > Actions`:
-
-```
-TAVILY_API_KEY, GLM_API_KEY, GLM_CODING_API_KEY, MINIMAX_API_KEY,
-BOCHA_API_KEY, SERPAPI_API_KEY, SERPER_API_KEY,
-FIRECRAWL_API_KEY, ANYCRAWL_API_KEY
-```
 
 ### Release
 

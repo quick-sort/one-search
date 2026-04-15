@@ -5,7 +5,9 @@ use crate::error::WebSearchError;
 use crate::load_balancer::strategy::{create_strategy, SelectionStrategy};
 use crate::providers::anycrawl::AnycrawlProvider;
 use crate::providers::bocha::BochaProvider;
+use crate::providers::brave::BraveProvider;
 use crate::providers::firecrawl::FirecrawlProvider;
+use crate::providers::jina::JinaProvider;
 use crate::providers::minimax::MiniMaxProvider;
 use crate::providers::serpapi::SerpApiProvider;
 use crate::providers::serper::SerperProvider;
@@ -51,6 +53,8 @@ fn default_base_url(provider_name: &str) -> &'static str {
         "anycrawl" => "https://api.anycrawl.dev",
         "serpapi" => "https://serpapi.com",
         "serper" => "https://google.serper.dev",
+        "brave" => "https://api.search.brave.com",
+        "jina" => "https://r.jina.ai",
         "webcrawler" => "https://api.webcrawlerapi.com",
         _ => "",
     }
@@ -153,14 +157,26 @@ impl ProviderLoadBalancer {
                             as Arc<dyn WebSearchProvider>
                     })
                     .collect(),
+                "brave" => provider_config
+                    .api_keys
+                    .iter()
+                    .map(|key| {
+                        Arc::new(BraveProvider::new(base_url.to_string(), key.clone()))
+                            as Arc<dyn WebSearchProvider>
+                    })
+                    .collect(),
+                "jina" => {
+                    let key = provider_config.api_keys.first().cloned().unwrap_or_default();
+                    vec![Arc::new(JinaProvider::new(base_url.to_string(), key)) as Arc<dyn WebSearchProvider>]
+                }
                 _ => {
                     tracing::warn!("Unknown provider: {}", provider_config.name);
                     continue;
                 }
             };
 
-            let supports_fetch = !["minimaxi", "minimax_io", "bocha", "serpapi"].contains(&name);
-            let supports_search = name != "anycrawl";
+            let supports_fetch = !["minimaxi", "minimax_io", "bocha", "serpapi", "brave"].contains(&name);
+            let supports_search = !["anycrawl"].contains(&name);
 
             for (key_index, provider) in provider_instances.into_iter().enumerate() {
                 entries.push(ProviderEntry {

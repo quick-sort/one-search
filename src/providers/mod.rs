@@ -2,7 +2,9 @@
 
 pub mod anycrawl;
 pub mod bocha;
+pub mod brave;
 pub mod firecrawl;
+pub mod jina;
 pub mod minimax;
 pub mod serpapi;
 pub mod serper;
