@@ -34,7 +34,9 @@ WebSearchMcpServer (tools/server.rs)
                 ├── FirecrawlProvider
                 ├── AnyCrawlProvider
                 ├── SerpApiProvider
-                └── SerperProvider
+                ├── SerperProvider
+                ├── BraveProvider
+                └── JinaProvider
 ```
 
 ### Key Components
@@ -58,8 +60,11 @@ YAML via `config.yaml`:
 - `provider_strategy`: round_robin or random for provider selection, with `fallback: true`
 
 ### Provider Support
-- Search + Fetch: Tavily, ZhiPu, ZhiPu Coding, Firecrawl, Serper
-- Search only: MiniMax, MiniMax IO, Bocha, SerpAPI
+- Search + Fetch: Tavily, ZhiPu, ZhiPu Coding, Firecrawl, Serper, Jina
+- Search only: MiniMax, MiniMax IO, Bocha, SerpAPI, Brave
 - Fetch only: AnyCrawl
 
 Providers without fetch support are skipped automatically in `fetch()` calls.
+
+### Proxy Support
+All providers use `reqwest::Client::new()` which automatically reads `HTTP_PROXY` and `HTTPS_PROXY` environment variables. Set these before starting the server if providers require a proxy.

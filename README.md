@@ -33,6 +33,8 @@ A Rust-based MCP (Model Context Protocol) server that provides `web_search` and 
 | [Jina](https://jina.ai) | `jina` | ✅ | ✅ | `https://r.jina.ai` |
 
 > For ZhiPu Coding, set `api_variant: "coding"` in settings.
+>
+> For Jina, the `api_key` is required for `web_search` but optional for `web_fetch`.
 
 ## Quick Start
 
@@ -70,13 +72,10 @@ providers:
 ### 4. Run
 
 ```bash
-# stdio mode (default)
+# stdio mode (default, looks for config.yaml in CWD then ~/.config/websearch.yaml)
 cargo run --release
 
-# HTTP mode (enable in config.yaml)
-cargo run --release -- --config /path/to/config.yaml
-
-# custom config
+# custom config path
 cargo run --release -- --config /path/to/config.yaml
 ```
 
@@ -128,13 +127,18 @@ server:
     enabled: true
     host: "0.0.0.0"
     port: 8080
-    api_key: "your-key"   # optional Bearer token authentication
-    mcp_path: "/mcp"      # MCP endpoint path
+    api_key: "your-key"       # optional Bearer token authentication
+    mcp_path: "/mcp"          # MCP endpoint path
+    allowed_hosts:            # optional: allowed Host header values (DNS rebinding protection)
+      - "localhost:8080"
+      - "onesearch:8080"      # Docker service name
 ```
 
 When `http.enabled` is `true`, the server starts as an HTTP server using MCP Streamable HTTP transport. When `false` or omitted, it runs in stdio mode.
 
 The `api_key` is optional. When set, all requests to the MCP endpoint require `Authorization: Bearer <api_key>` header. The `/health` endpoint is always public.
+
+`allowed_hosts` restricts which `Host` header values are accepted (DNS rebinding protection). Defaults to loopback hosts (`localhost`, `127.0.0.1`, `::1`). Add Docker service names or custom domains as needed.
 
 ### Load Balancing Strategy
 
@@ -150,6 +154,21 @@ provider_strategy:
 ### Provider Priority
 
 The order in `providers` list determines priority (first = highest).
+
+### Config File Lookup
+
+The server searches for the config file in this order:
+1. `--config <path>` CLI argument
+2. `config.yaml` in the current working directory
+3. `~/.config/websearch.yaml`
+
+### Proxy Support
+
+All providers respect standard proxy environment variables:
+
+```bash
+HTTP_PROXY=http://proxy:3128 HTTPS_PROXY=http://proxy:3128 cargo run --release
+```
 
 ### ZhiPu Coding Endpoint
 
@@ -208,7 +227,7 @@ Returns:
 }
 ```
 
-> `web_fetch` skips providers that don't support it (MiniMax, Bocha, SerpAPI).
+> `web_fetch` skips providers that don't support it (MiniMax, MiniMax IO, Bocha, SerpAPI, Brave).
 
 ## Testing
 
@@ -222,8 +241,13 @@ cargo test --test http_mcp_test -- --ignored  # HTTP MCP integration tests
 
 ```bash
 docker build -t one-search .
-docker run -d --rm -p 8080:8080 -v $(pwd)/config.yaml:/app/config.yaml:ro one-search
+docker run -d --rm -p 8080:8080 \
+  -v $(pwd)/config.yaml:/app/config.yaml:ro \
+  -e RUST_LOG=info \
+  one-search
 ```
+
+The `CONFIG_PATH` environment variable sets the config file path inside the container (default: `/app/config.yaml`).
 
 ### Docker Compose
 
