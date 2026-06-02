@@ -60,6 +60,54 @@ fn default_base_url(provider_name: &str) -> &'static str {
     }
 }
 
+/// Extract the real URL from an Outlook SafeLinks wrapper, or return the input unchanged.
+///
+/// SafeLinks wraps every link in outgoing emails as:
+/// `https://*.safelinks.protection.outlook.com/?url=<encoded-real-url>&data=...`
+/// The real URL is in the `url` query parameter — no request to Microsoft is needed.
+fn unwrap_safelinks(url: &str) -> String {
+    if let Ok(parsed) = reqwest::Url::parse(url) {
+        if parsed
+            .host_str()
+            .is_some_and(|h| h.contains("safelinks.protection.outlook.com"))
+        {
+            if let Some((_, inner)) = parsed.query_pairs().find(|(k, _)| k == "url") {
+                tracing::debug!("SafeLinks unwrapped: {} -> {}", url, inner);
+                return inner.into_owned();
+            }
+        }
+    }
+    url.to_string()
+}
+
+/// Resolve a URL to its final destination before passing to providers.
+///
+/// 1. Unwraps Outlook SafeLinks via [`unwrap_safelinks`].
+/// 2. Follows HTTP redirects (e.g. newsletter tracking links) via GET so the
+///    provider receives the final content URL rather than a tracker.
+async fn resolve_url(url: &str) -> String {
+    let mut resolved = unwrap_safelinks(url);
+
+    // Use GET (not HEAD) — some tracking servers return 404 on HEAD but redirect on GET.
+    // We don't read the body, so bandwidth cost is minimal.
+    let client = reqwest::Client::new();
+    if let Ok(resp) = client
+        .get(&resolved)
+        .header("User-Agent", "Mozilla/5.0")
+        .send()
+        .await
+    {
+        let final_url = resp.url().to_string();
+        if final_url != resolved {
+            tracing::debug!("Redirect resolved: {} -> {}", resolved, final_url);
+            resolved = final_url;
+        }
+    }
+    // If redirect resolution fails, proceed with the unwrapped URL
+
+    resolved
+}
+
 impl ProviderLoadBalancer {
     /// Create a new load balancer from configuration.
     pub fn from_config(config: &Config) -> Result<Self, WebSearchError> {
@@ -293,6 +341,9 @@ impl ProviderLoadBalancer {
     ///
     /// Only providers that support fetch will be used.
     pub async fn fetch(&self, url: &str) -> Result<FetchResponse, WebSearchError> {
+        let resolved = resolve_url(url).await;
+        let url = resolved.as_str();
+
         let fetch_indices: Vec<usize> = self
             .entries
             .iter()
@@ -511,6 +562,75 @@ mod tests {
 
         let response = result.unwrap();
         assert!(!response.content.is_empty(), "无内容");
+    }
+
+    // ----- resolve_url / unwrap_safelinks tests -----
+
+    #[test]
+    fn test_unwrap_safelinks_extracts_inner_url() {
+        let inner = "https://www.rust-lang.org/";
+        // Simulate a realistic SafeLinks wrapper (inner URL is percent-encoded)
+        let safelink = format!(
+            "https://nam12.safelinks.protection.outlook.com/?url=https%3A%2F%2Fwww.rust-lang.org%2F\
+             &data=05%7C01%7Cuser%40example.com%7Cabc123&sdata=xyz&reserved=0"
+        );
+        assert_eq!(unwrap_safelinks(&safelink), inner);
+    }
+
+    #[test]
+    fn test_unwrap_safelinks_different_region_prefix() {
+        // SafeLinks hostnames vary by tenant region (nam12, eur01, apc01, …)
+        let inner = "https://example.com/path?q=1";
+        let safelink =
+            "https://eur01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fexample.com%2Fpath%3Fq%3D1\
+             &data=05%7C02%7C&sdata=abc&reserved=0";
+        assert_eq!(unwrap_safelinks(safelink), inner);
+    }
+
+    #[test]
+    fn test_unwrap_safelinks_no_url_param_returns_unchanged() {
+        // A safelinks host but missing the `url` query param — return as-is.
+        let url = "https://nam12.safelinks.protection.outlook.com/?data=onlythis";
+        assert_eq!(unwrap_safelinks(url), url);
+    }
+
+    #[test]
+    fn test_unwrap_safelinks_plain_url_unchanged() {
+        let url = "https://www.rust-lang.org/";
+        assert_eq!(unwrap_safelinks(url), url);
+    }
+
+    #[test]
+    fn test_unwrap_safelinks_invalid_url_unchanged() {
+        let url = "not a url at all";
+        assert_eq!(unwrap_safelinks(url), url);
+    }
+
+    #[tokio::test]
+    #[ignore] // 需要网络：验证重定向跟随
+    async fn test_resolve_url_follows_redirect() {
+        // http:// → https:// is a common redirect pattern; resolve_url should return the https URL.
+        let result = resolve_url("http://example.com/").await;
+        assert!(
+            result.starts_with("https://"),
+            "Expected HTTPS after redirect, got: {}",
+            result
+        );
+    }
+
+    #[tokio::test]
+    #[ignore] // 需要网络：SafeLinks + 重定向的完整流程
+    async fn test_resolve_url_safelinks_and_redirect() {
+        // Wrap example.com in a SafeLinks URL and verify both layers are peeled.
+        let safelink =
+            "https://nam12.safelinks.protection.outlook.com/?url=http%3A%2F%2Fexample.com%2F\
+             &data=05%7C01%7C&sdata=test&reserved=0";
+        let result = resolve_url(safelink).await;
+        assert!(
+            result.contains("example.com"),
+            "Expected example.com in result, got: {}",
+            result
+        );
     }
 
     #[tokio::test]
