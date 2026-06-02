@@ -69,7 +69,7 @@ fn unwrap_safelinks(url: &str) -> String {
     if let Ok(parsed) = reqwest::Url::parse(url) {
         if parsed
             .host_str()
-            .map_or(false, |h| h.contains("safelinks.protection.outlook.com"))
+            .is_some_and(|h| h.contains("safelinks.protection.outlook.com"))
         {
             if let Some((_, inner)) = parsed.query_pairs().find(|(k, _)| k == "url") {
                 tracing::debug!("SafeLinks unwrapped: {} -> {}", url, inner);
@@ -91,21 +91,19 @@ async fn resolve_url(url: &str) -> String {
     // Use GET (not HEAD) — some tracking servers return 404 on HEAD but redirect on GET.
     // We don't read the body, so bandwidth cost is minimal.
     let client = reqwest::Client::new();
-    match client
+    if let Ok(resp) = client
         .get(&resolved)
         .header("User-Agent", "Mozilla/5.0")
         .send()
         .await
     {
-        Ok(resp) => {
-            let final_url = resp.url().to_string();
-            if final_url != resolved {
-                tracing::debug!("Redirect resolved: {} -> {}", resolved, final_url);
-                resolved = final_url;
-            }
+        let final_url = resp.url().to_string();
+        if final_url != resolved {
+            tracing::debug!("Redirect resolved: {} -> {}", resolved, final_url);
+            resolved = final_url;
         }
-        Err(_) => {} // If redirect resolution fails, proceed with the unwrapped URL
     }
+    // If redirect resolution fails, proceed with the unwrapped URL
 
     resolved
 }
